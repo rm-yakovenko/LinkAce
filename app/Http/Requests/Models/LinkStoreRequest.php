@@ -27,7 +27,7 @@ class LinkStoreRequest extends FormRequest
         return [
             'url' => [
                 'required',
-                'string',
+                'url',
                 Rule::unique('links')->where(function ($query) {
                     return $query->where('user_id', auth()->user()->id);
                 }),

@@ -34,7 +34,7 @@ class LinkUpdateRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'url' => 'required|string',
+            'url' => 'required|url',
             'title' => 'nullable|string',
             'description' => 'nullable|string',
             'lists' => 'nullable',
@@ -46,6 +46,7 @@ class LinkUpdateRequest extends FormRequest
         if ($this->requireUniqueUrl) {
             $rules['url'] = [
                 'required',
+                'url',
                 Rule::unique('links')->where(function ($query) {
                     return $query->where('user_id', auth()->id());
                 }),
