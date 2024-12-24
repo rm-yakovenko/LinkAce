@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -186,14 +187,32 @@ class LinkControllerTest extends TestCase
         $flashMessages->contains('message', trans('link.duplicates_found'));
     }
 
+    public function testStoreRequestWithMaliciousUrl(): void
+    {
+        $response = $this->post('links', [
+            'url' => 'javascript:alert(document.cookie)',
+            'title' => null,
+            'description' => null,
+            'lists' => null,
+            'tags' => null,
+            'is_private' => '0',
+        ]);
+
+        $response->assertSessionHasErrors(['url' => 'The url format is invalid.']);
+
+        $this->assertDatabaseCount('links', 0);
+    }
+
     public function testStoreRequestWithBrokenUrl(): void
     {
         Http::fake([
-            'example.com' => Http::response('', 500),
+            'https://bad-example.com' => function () {
+                throw new ConnectionException('Unable to reach bad-example.com');
+            },
         ]);
 
         $response = $this->post('links', [
-            'url' => 'example.com',
+            'url' => 'https://bad-example.com',
             'title' => null,
             'description' => null,
             'lists' => null,
@@ -207,7 +226,7 @@ class LinkControllerTest extends TestCase
 
         $this->assertTrue($databaseLink->check_disabled);
         $this->assertEquals(Link::STATUS_BROKEN, $databaseLink->status);
-        $this->assertEquals('example.com', $databaseLink->title);
+        $this->assertEquals('bad-example.com', $databaseLink->title);
     }
 
     public function testStoreRequestWithHugeThumbnail(): void
