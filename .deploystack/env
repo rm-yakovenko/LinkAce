@@ -1,0 +1,3 @@
+DB_PASSWORD="ChangeThisToASecurePassword!"
+DB_USERNAME="linkace"
+DB_DATABASE=linkace
